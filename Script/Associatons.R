@@ -11,17 +11,30 @@ setwd(dirname(dirname(current_path)))
 rm(current_path)
 
 #Transactions
-transactions <- read.transactions(file = "Datasets/ElectronidexTransactions2017.csv",
+transactions <- read.transactions(file = "datasets/ElectronidexTransactions2017.csv",
                                  format = "basket",
                                  sep = ",",
-                                 header = FALSE,
-                                 cols = 1)
+                                 header = FALSE)
 
 #Get to know dataset
-inspect(transactions[1:1000])
-length(transactions)
-mean(size(transactions))
-LIST(transactions)
-itemLabels(transactions)
+# inspect(transactions[1:1000])
+# length(transactions)
+# mean(size(transactions))
+# LIST(transactions)
+# itemLabels(transactions)
+
+#Convert transactions to dataframe
+transactions_mat <- as(transactions,"matrix")
+transactions_df <- as.data.frame(transactions_mat)
+
+
+items <- c(transactions@itemInfo$labels)
+freq <- c()
+#Convert logical to integer (0 or 1)
+for (i in 1:ncol(transactions_df)){
+  transactions_df[ ,i] <- as.integer(transactions_df[ ,i])
+  freq <- cbind(freq,sum(transactions_df[ ,i]))}
+
+
 
 
