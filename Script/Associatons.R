@@ -20,6 +20,11 @@ transactions <- read.transactions(file = "Datasets/ElectronidexTransactions2017.
                                  header = FALSE,
                                  cols = 1)
 
-
+#Get to know dataset
+inspect(transactions[1:1000])
+length(transactions)
+mean(size(transactions))
+LIST(transactions)
+itemLabels(transactions)
 
 
