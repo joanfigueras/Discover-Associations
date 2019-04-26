@@ -16,12 +16,6 @@ transactions <- read.transactions(file = "datasets/ElectronidexTransactions2017.
                                  sep = ",",
                                  header = FALSE)
 
-#Get to know dataset
-# inspect(transactions[1:1000])
-# length(transactions)
-# mean(size(transactions))
-# LIST(transactions)
-# itemLabels(transactions)
 
 #Convert transactions to dataframe
 transactions_mat <- as(transactions,"matrix")
