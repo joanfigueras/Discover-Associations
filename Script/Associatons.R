@@ -16,9 +16,13 @@ transactions <-
                                  format = "basket",
                                  sep = ",",
                                  header = FALSE)
+transactions_DF <- read.csv(file = "Datasets/ElectronidexTransactions2017.csv",
+                                     sep = ",",
+                                     header = FALSE,
+                                     colClasses = 'character')
+
 
 transactions@itemInfo$category <- Item_Cat[ ,2]
-str(transactions)
 by_category <- aggregate(transactions, by = "category")
 
 transactions@itemInfo$labels <- paste(transactions@itemInfo$category,
@@ -29,10 +33,36 @@ transactions_mat <- as(transactions,"matrix")
 transactions_df <- as.data.frame(transactions_mat)
 
 for (i in 1:ncol(transactions_df)) {
-  transactions_df[ ,i] <- as.integer(transactions_df[ ,i])
-}
+  transactions_df[ ,i] <- as.integer(transactions_df[ ,i])}
 
-transactions_df$client_type <- #Here is where we need to create the new variable for the type of customers
+x <- names(transactions_df)
+for (i in 1:ncol(transactions_df)) {
+  for (j in 1:nrow(transactions_df)){
+    if (transactions_df[j,i] == 1) {
+      transactions_df[j,i] <- x[i]}}}
+
+matches <- c("Laptop","Desktop","Monitors","Printers")
+transactions_df$client_type <- "0"
+transactions_df$laptop <- "0"
+transactions_df$desktop <- "0"
+
+for (i in 1:nrow(transactions_df)) {
+  for (j in matches) {
+    sum(grep(pattern = j, x = transactions_df[i,]))
+  
+}}
+
+
+
+for (i in 1:nrow(transactions_df)) {
+  for (j in matches) {
+   if (sum(grep(pattern = j, x = transactions_df[i,])) > 1) {
+     transactions_df$client_type[i] <- "B2B"
+   } else {
+     transactions_df$client_type[i] <- "B2C"}}}
+
+
+
 
 # Plotting -------------------------------------------------------
 barplot(sort(itemFrequency(transactions), decreasing=TRUE))
