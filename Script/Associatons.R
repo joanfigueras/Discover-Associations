@@ -57,11 +57,6 @@ for (i in 1:nrow(transactions_df)){
     }
 }
 
-table(transactions_df$client_type)
-sum(grepl("Laptops", transactions_df[2, ]))
-
-transactions_df$client_type <- client_type #Here is the new variable for the type of customers
-
  # Spliting the datasets and transactions by type of customer ----
 
 
