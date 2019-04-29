@@ -58,9 +58,7 @@ for (i in 1:nrow(transactions_df)){
 }
 
 table(transactions_df$client_type)
-sum(grepl("Laptops", transactions_df[2, ]))
 
-transactions_df$client_type <- client_type #Here is where we need to create the new variable for the type of customers
 
 # Plotting -------------------------------------------------------
 barplot(sort(itemFrequency(transactions), decreasing=TRUE))
