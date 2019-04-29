@@ -31,8 +31,36 @@ transactions_df <- as.data.frame(transactions_mat)
 for (i in 1:ncol(transactions_df)) {
   transactions_df[ ,i] <- as.integer(transactions_df[ ,i])
 }
+  
+x <- names(transactions_df)
+for (i in 1:ncol(transactions_df)){
+  for (j in 1:nrow(transactions_df)){
+    if (transactions_df[j,i]==1){
+      transactions_df[j,i] <- x[i]
+  }
+  }
+}
 
-transactions_df$client_type <- #Here is where we need to create the new variable for the type of customers
+ # Classify the types of customers ----
+v1 <- c()
+v2 <- c()
+client_type <- c()
+
+for (i in 1:nrow(transactions_df)){
+    v1[i] <- sum(grepl("Laptops", transactions_df[i, ]))
+    v2[i] <- sum(grepl("Desktop", transactions_df[i, ]))
+    if (sum(v1[i]+v2[i]) >=2) {
+      client_type[i] <- "Business"
+    }
+    else {
+      client_type[i] <- "Retail"
+    }
+}
+
+table(transactions_df$client_type)
+sum(grepl("Laptops", transactions_df[2, ]))
+
+transactions_df$client_type <- client_type #Here is where we need to create the new variable for the type of customers
 
 # Plotting -------------------------------------------------------
 barplot(sort(itemFrequency(transactions), decreasing=TRUE))
