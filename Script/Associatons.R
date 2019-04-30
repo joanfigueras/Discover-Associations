@@ -21,12 +21,15 @@ transactions@itemInfo$category <- Item_Cat[ ,2]
 str(transactions)
 by_category <- aggregate(transactions, by = "category")
 
-transactions@itemInfo$labels <- paste(transactions@itemInfo$category,
-                                      transactions@itemInfo$labels)
+transactions2 <- transactions
+transactions2@itemInfo$labels <- paste(transactions2@itemInfo$category,
+                                      transactions2@itemInfo$labels)
 
 # Matrix and Data Frame from the "transactions": ----
-transactions_mat <- as(transactions,"matrix")
+transactions_mat <- as(transactions2,"matrix")
 transactions_df <- as.data.frame(transactions_mat)
+transactions_mat2 <- as(transactions,"matrix")
+transactions_df2 <- as.data.frame(transactions_mat2)
 
 for (i in 1:ncol(transactions_df)) {
   transactions_df[ ,i] <- as.integer(transactions_df[ ,i])
@@ -57,8 +60,26 @@ for (i in 1:nrow(transactions_df)){
     }
 }
 
+for (i in 1:ncol(transactions_df2)) {
+  transactions_df2[ ,i] <- as.integer(transactions_df2[ ,i])
+}
+transactions_df2$client_type <- client_type
+
  # Spliting the datasets and transactions by type of customer ----
 
+retail_df <- subset(transactions_df2[ ,1:125], client_type == "Retail")
+business_df <- subset(transactions_df2[ ,1:125], client_type == "Business")
+retail_mat <- as(retail_df, "matrix")
+business_mat <- as(business_df, "matrix")
+
+retail <- as(retail_mat, "transactions")
+business <- as(business_mat, "transactions")
+
+retail@itemInfo$category <- Item_Cat[ ,2]
+retail_by_cat <- aggregate(retail, by = "category")
+
+business@itemInfo$category <- Item_Cat[ ,2]
+business_by_cat <- aggregate(business, by = "category")
 
 # Plotting -------------------------------------------------------
 barplot(sort(itemFrequency(transactions), decreasing=TRUE))
