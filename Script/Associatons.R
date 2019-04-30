@@ -18,23 +18,27 @@ transactions <-
                                  header = FALSE)
 
 transactions@itemInfo$category <- Item_Cat[ ,2]
+transactions@itemInfo$bkw_category <- Item_Cat[ ,3]
 str(transactions)
 by_category <- aggregate(transactions, by = "category")
+by_bkw_category <- aggregate(transactions, by = "bkw_category")
 
 transactions2 <- transactions
 transactions2@itemInfo$labels <- paste(transactions2@itemInfo$category,
                                       transactions2@itemInfo$labels)
 
 # Matrix and Data Frame from the "transactions": ----
-transactions_mat <- as(transactions2,"matrix")
-transactions_df <- as.data.frame(transactions_mat)
-transactions_mat2 <- as(transactions,"matrix")
-transactions_df2 <- as.data.frame(transactions_mat2)
+transactions_df <- as.data.frame(as(transactions2,"matrix"))
+transactions_df2 <- as.data.frame(as(transactions,"matrix"))
 
 for (i in 1:ncol(transactions_df)) {
   transactions_df[ ,i] <- as.integer(transactions_df[ ,i])
 }
-  
+
+for (i in 1:ncol(transactions_df2)) {
+  transactions_df2[ ,i] <- as.integer(transactions_df2[ ,i])
+}
+
 x <- names(transactions_df)
 for (i in 1:ncol(transactions_df)){
   for (j in 1:nrow(transactions_df)){
@@ -44,26 +48,31 @@ for (i in 1:ncol(transactions_df)){
   }
 }
 
- # Classify the types of customers ----
+# Classify the types of customers ----
 v1 <- c()
 v2 <- c()
+v3 <- c()
+v4 <- c()
+v5 <- c()
 client_type <- c()
 
 for (i in 1:nrow(transactions_df)){
-    v1[i] <- sum(grepl("Laptops", transactions_df[i, ]))
-    v2[i] <- sum(grepl("Desktop", transactions_df[i, ]))
-    if (sum(v1[i]+v2[i]) >=2) {
-      client_type[i] <- "Business"
-    }
-    else {
-      client_type[i] <- "Retail"
-    }
+  v1[i] <- sum(grepl("Laptops", transactions_df[i, ]))
+  v2[i] <- sum(grepl("Desktop", transactions_df[i, ]))
+  v3[i] <- sum(grepl("Printer", transactions_df[i, ]))
+  v4[i] <- sum(grepl("Monitor", transactions_df[i, ]))
+  v5[i] <- sum(transactions_df2[i,1:125])
+  if (sum(v1[i]+v2[i]) >=2 | sum(v3[i]) >=2 | sum(v4[i] + v1[i]) >=2 |
+      v5[i] >=6) 
+    {
+    client_type[i] <- "Business"
+  } else {
+    client_type[i] <- "Retail"
+  }
 }
 
-for (i in 1:ncol(transactions_df2)) {
-  transactions_df2[ ,i] <- as.integer(transactions_df2[ ,i])
-}
 transactions_df2$client_type <- client_type
+table(transactions_df2$client_type)
 
  # Spliting the datasets and transactions by type of customer ----
 
@@ -76,12 +85,17 @@ retail <- as(retail_mat, "transactions")
 business <- as(business_mat, "transactions")
 
 retail@itemInfo$category <- Item_Cat[ ,2]
+retail@itemInfo$bkw_category <- Item_Cat[ ,3]
 retail_by_cat <- aggregate(retail, by = "category")
+retail_by_bkw_cat <- aggregate(retail, by = "bkw_category")
 
 business@itemInfo$category <- Item_Cat[ ,2]
+business@itemInfo$bkw_category <- Item_Cat[ ,3]
 business_by_cat <- aggregate(business, by = "category")
+business_by_bkw_cat <- aggregate(business, by = "bkw_category")
 
 # Plotting -------------------------------------------------------
+ # Overall plotting
 barplot(sort(itemFrequency(transactions), decreasing=TRUE))
 itemFrequencyPlot(transactions, topN = 10, type = "absolute", 
                   col = brewer.pal(8, "Pastel2"),
@@ -90,38 +104,66 @@ itemFrequencyPlot(transactions, topN = 10, type = "absolute",
 image(sample(transactions,500))
 image(sample(by_category,100))
 
-itemFrequencyPlot(by_category, topN = 20, type = "absolute", 
+itemFrequencyPlot(by_category, topN = 17, type = "absolute", 
                   col = brewer.pal(8, "Pastel2"),
-                  main = "Top10 - Absolute Item Frequency Plot" )
+                  main = "Frequency plot by category")
 
-itemFrequencyPlot(subset(by_category = "Laptops"), topN = 20, type = "absolute", 
+itemFrequencyPlot(by_bkw_category, topN = 7, type = "absolute", 
                   col = brewer.pal(8, "Pastel2"),
-                  main = "Top10 - Absolute Item Frequency Plot" )
+                  main = "Frequency plot by Blackwell's category")
+
+ # Business Plotting
+itemFrequencyPlot(business, topN = 10, type = "absolute", 
+                  col = brewer.pal(8, "Pastel2"),
+                  main = "Top10 - Business Item Frequency Plot")
+
+itemFrequencyPlot(business_by_cat, topN = 17, type = "absolute", 
+                  col = brewer.pal(8, "Pastel2"),
+                  main = "Business Frequency plot by category")
+
+itemFrequencyPlot(business_by_bkw_cat, topN = 7, type = "absolute", 
+                  col = brewer.pal(8, "Pastel2"),
+                  main = "Business Frequency plot by Blackwell's category")
+ # Retail Plotting
+itemFrequencyPlot(retail, topN = 10, type = "absolute", 
+                  col = brewer.pal(8, "Pastel2"),
+                  main = "Top10 - Retail Item Frequency Plot" )
+
+itemFrequencyPlot(retail_by_cat, topN = 20, type = "absolute", 
+                  col = brewer.pal(8, "Pastel2"),
+                  main = "Retail Frequency plot by category" )
+
+itemFrequencyPlot(retail_by_bkw_cat, topN = 7, type = "absolute", 
+                  col = brewer.pal(8, "Pastel2"),
+                  main = "Retail Frequency plot by Blackwell's category")
 
  # Rules -----------------------------------------------------------------
-association_rules <- apriori (transactions, 
-                              parameter = list(supp = 0.0015, conf = 0.9, 
+ # Business
+business_rules <- apriori(business, 
+                              parameter = list(supp = 0.0025, conf = 0.9, 
                                                minlen = 2)) #We use minlen to set the minimun size for the baskets
 
+redundant_rules <- is.redundant(business_rules)
+business_rules <- business_rules[!redundant_rules] # remove redundant rules.
 
-redundant_rules <- is.redundant(association_rules)
-association_rules <- association_rules[!redundant_rules] # remove redundant rules.
+ruleExplorer(business_rules) # Cool stuff
+inspect(business_rules)
 
-ruleExplorer(association_rules) # Cool stuff
-inspect(association_rules)
+business_top_confidence <- sort(business_rules, decreasing = TRUE, 
+                                na.last = NA, by = "confidence")
 
-top_confidence <- sort(association_rules, decreasing = TRUE, na.last = NA,
-                       by = "confidence")
-inspect(top_confidence)
-a <- c("Laptops", "Desktop")
-category_rules <- apriori(by_category, # All the baskets that are more likely to buy an iMac
-                      parameter = list(conf = 0.3), 
-                      appearance = list(default = "rhs", lhs = a))
+inspect(business_top_confidence[1:10])
 
-inspect(category_rules)
+business_cat_rules <- apriori(business_by_bkw_cat, # All the baskets that are more likely to buy an iMac
+                      parameter = list(supp = 0.005, conf = 0.9, 
+                                       minlen = 2))
 
-ruleExplorer(category_rules)
+business_top_confidence <- sort(business_cat_rules, decreasing = TRUE, 
+                                na.last = NA, by = "lift")
 
-# subset(association_rules, items %in% "iMac")
+inspect(business_cat_rules)
+
+ruleExplorer(business_cat_rules)
+
 # plot(subset(association_rules, items %in% "Acer Desktop"), method = "graph", control = list(type = "items"))
 
