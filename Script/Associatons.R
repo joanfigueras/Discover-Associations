@@ -1,7 +1,7 @@
 #Settings ----------------
 # Packages:
 pacman::p_load(rstudioapi, readr, RColorBrewer, dplyr, car, GGally, shiny,
-               arules, arulesViz, ggplot2)
+               arules, arulesViz, ggplot2,grid,gridExtra,lattice)
 
 # Load data ---------------------------
 # Datasets:
@@ -47,23 +47,54 @@ for (i in 1:ncol(transactions_df)){
  # Classify the types of customers ----
 v1 <- c()
 v2 <- c()
+v3 <- c()
+v4 <- c()
+v5 <- c()
+v6 <- c()
 client_type <- c()
+
+for (i in 1:nrow(transactions_df)){
+  v1[i] <- sum(grepl("Laptops", transactions_df[i, ]))
+  v2[i] <- sum(grepl("Desktop", transactions_df[i, ]))
+  v3[i] <- sum(grepl("Printer", transactions_df[i, ]))
+  v4[i] <- sum(grepl("Monitor", transactions_df[i, ]))
+  v5[i] <- sum(transactions_df2[i,1:125])
+  if (sum(v1[i]+v2[i]) >=2 | sum(v3[i]) >=2 | sum(v4[i] + v1[i]) >=2 | v5[i] >=6) {
+    client_type[i] <- "Business"
+        } else {
+          client_type[i] <- "Retail"
+        }
+      }
+
 
 for (i in 1:nrow(transactions_df)){
     v1[i] <- sum(grepl("Laptops", transactions_df[i, ]))
     v2[i] <- sum(grepl("Desktop", transactions_df[i, ]))
-    if (sum(v1[i]+v2[i]) >=2) {
+    v3[i] <- sum(grepl("Printer", transactions_df[i, ]))
+    v4[i] <- sum(grepl("Monitor", transactions_df[i, ]))
+    v5[i] <- sum(transactions_df2[i,1:125])
+    if (sum(v1[i]+v2[i]) >=2 ) {
       client_type[i] <- "Business"
-    }
-    else {
-      client_type[i] <- "Retail"
-    }
-}
+    } else {
+        if (sum(v3[i]) >=2) {
+        client_type[i] <- "Business"
+        } else {
+          if (sum(v4[i] + v2[i]) >=2) {
+            client_type[i] <- "Business"
+          } else {
+            if (v5[i] >=5) {
+              client_type[i] <- "Business"
+            } else {
+                client_type[i] <- "Retail"
+         }
+    }}}}
 
 for (i in 1:ncol(transactions_df2)) {
   transactions_df2[ ,i] <- as.integer(transactions_df2[ ,i])
 }
 transactions_df2$client_type <- client_type
+table(transactions_df2$client_type)
+
 
  # Spliting the datasets and transactions by type of customer ----
 
@@ -99,6 +130,74 @@ itemFrequencyPlot(subset(by_category = "Laptops"), topN = 20, type = "absolute",
                   main = "Top10 - Absolute Item Frequency Plot" )
 
  # Rules -----------------------------------------------------------------
+
+plot_supp_conf <- function(trans,s1,s2,s3,s4) {
+  
+  supportLevels <- c(s1,s2,s3,s4)
+  confidenceLevels <- c(0.9,0.8,0.7,0.6)
+  
+  rules_sup2 <- integer(length = 4) 
+  rules_sup3 <- integer(length = 4) 
+  rules_sup4 <- integer(length = 4) 
+  rules_sup5 <- integer(length = 4) 
+  
+  #Apriori algorithm with support of 5%####
+  for (i in 1:length(confidenceLevels)) {
+    rules_sup2[i] <- length(apriori(trans, parameter = list(sup = supportLevels[1],
+                                                                   conf=confidenceLevels[i],
+                                                                   target = "rules",
+                                                                   minlen = 2)))
+  }
+  
+  #Apriori algorithm with support of 1%####
+  for (i in 1:length(confidenceLevels)) {
+    rules_sup3[i] <- length(apriori(trans, parameter = list(sup = supportLevels[2],
+                                                                   conf=confidenceLevels[i],
+                                                                   target = "rules",
+                                                                   minlen = 2)))
+  }
+  
+  #Apriori algorithm with support of 0.5%####
+  for (i in 1:length(confidenceLevels)) {
+    rules_sup4[i] <- length(apriori(trans, parameter = list(sup = supportLevels[3],
+                                                                   conf=confidenceLevels[i],
+                                                                   target = "rules",
+                                                                   minlen = 2)))
+  }
+  
+  #Apriori algorithm with support of 0.1%####
+  for (i in 1:length(confidenceLevels)) {
+    rules_sup5[i] <- length(apriori(trans, parameter = list(sup = supportLevels[4],
+                                                                   conf=confidenceLevels[i],
+                                                                   target = "rules",
+                                                                   minlen = 2)))
+  }
+  
+  
+  #Plotting all confidence - support levels####
+  num_rules <- data.frame(rules_sup2,rules_sup3,rules_sup4,rules_sup5)
+  
+  plot_all <- ggplot(data = num_rules, aes(x = confidenceLevels)) + 
+    geom_line(aes(y = rules_sup2, colour = paste("Supp Level of ",toString(s1)))) +
+    geom_point(aes(y = rules_sup2, colour = paste("Supp Level of ",toString(s1)))) +
+    geom_line(aes(y = rules_sup3, colour = paste("Supp Level of ",toString(s2)))) +
+    geom_point(aes(y = rules_sup3, colour = paste("Supp Level of ",toString(s2)))) +
+    geom_line(aes(y = rules_sup4, colour = paste("Supp Level of ",toString(s3)))) +
+    geom_point(aes(y = rules_sup4, colour = paste("Supp Level of ",toString(s3)))) +
+    geom_line(aes(y = rules_sup5, colour = paste("Supp Level of ",toString(s4)))) +
+    geom_point(aes(y = rules_sup5, colour = paste("Supp Level of ",toString(s4)))) +
+    labs(x="Confidence levels", y="Number of rules found", 
+         title="Apriori algorithm with different support levels") +
+    theme_bw() +
+    theme(legend.title=element_blank())
+
+
+return(plot_all)
+}
+
+plot_supp_conf(transactions,0.001,0.002,0.003,0.004)
+
+#----------------------------------------------------------------------------------------------
 association_rules <- apriori (transactions, 
                               parameter = list(supp = 0.0015, conf = 0.9, 
                                                minlen = 2)) #We use minlen to set the minimun size for the baskets
