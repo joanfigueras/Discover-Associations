@@ -97,26 +97,22 @@ business_by_bkw_cat <- aggregate(business, by = "bkw_category")
 
 # Plotting -------------------------------------------------------
  # Overall plotting
-barplot(sort(itemFrequency(transactions), decreasing=TRUE))
 itemFrequencyPlot(transactions, topN = 10, type = "absolute", 
                   col = brewer.pal(8, "Pastel2"),
                   main = "Top10 - Absolute Item Frequency Plot" )
-
-image(sample(transactions,500))
-image(sample(by_category,100))
 
 itemFrequencyPlot(by_category, topN = 17, type = "absolute", 
                   col = brewer.pal(8, "Pastel2"),
                   main = "Frequency plot by category")
 
-itemFrequencyPlot(by_bkw_category, topN = 7, type = "absolute", 
-                  col = brewer.pal(8, "Pastel2"),
-                  main = "Frequency plot by Blackwell's category")
+# itemFrequencyPlot(by_bkw_category, topN = 7, type = "absolute", 
+#                   col = brewer.pal(8, "Pastel2"),
+#                   main = "Frequency plot by Blackwell's category")
 
- # Business Plotting
-itemFrequencyPlot(business, topN = 10, type = "absolute", 
-                  col = brewer.pal(8, "Pastel2"),
-                  main = "Top10 - Business Item Frequency Plot")
+ ## Business Plotting
+# itemFrequencyPlot(business, topN = 10, type = "absolute", 
+#                   col = brewer.pal(8, "Pastel2"),
+#                   main = "Top10 - Business Item Frequency Plot")
 
 itemFrequencyPlot(business_by_cat, topN = 17, type = "absolute", 
                   col = brewer.pal(8, "Pastel2"),
@@ -125,17 +121,17 @@ itemFrequencyPlot(business_by_cat, topN = 17, type = "absolute",
 itemFrequencyPlot(business_by_bkw_cat, topN = 7, type = "absolute", 
                   col = brewer.pal(8, "Pastel2"),
                   main = "Business Frequency plot by Blackwell's category")
- # Retail Plotting
-itemFrequencyPlot(retail, topN = 10, type = "absolute", 
-                  col = brewer.pal(8, "Pastel2"),
-                  main = "Top10 - Retail Item Frequency Plot" )
+ ## Retail Plotting
+# itemFrequencyPlot(retail, topN = 10, type = "absolute", 
+#                   col = brewer.pal(8, "Pastel2"),
+#                   main = "Top10 - Retail Item Frequency Plot" )
 
 itemFrequencyPlot(retail_by_cat, topN = 20, type = "absolute", 
                   col = brewer.pal(8, "Pastel2"),
                   main = "Retail Frequency plot by category" )
 
 itemFrequencyPlot(retail_by_bkw_cat, topN = 7, type = "absolute", 
-                  col = brewer.pal(8, "Pastel2"),
+                  col = brewer.pal(8, "Pastel1"),
                   main = "Retail Frequency plot by Blackwell's category")
 
  # Rules -----------------------------------------------------------------
@@ -202,34 +198,39 @@ plot_supp_conf <- function(trans_obj,s1,s2,s3,s4) {
 
 return(plot_all)}
 
-plot_supp_conf(transactions,0.001,0.002,0.003,0.004)
-
  # Business
-business_rules <- apriori(business, 
-                              parameter = list(supp = 0.0025, conf = 0.9, 
-                                               minlen = 2)) #We use minlen to set the minimun size for the baskets
+plot_supp_conf(business_by_bkw_cat, 0.03, 0.027, 0.025, 0.024)
 
-redundant_rules <- is.redundant(business_rules)
-business_rules <- business_rules[!redundant_rules] # remove redundant rules.
+business_cat_rules <- apriori(business_by_bkw_cat, # All the baskets that are more likely to buy an iMac
+                              parameter = list(supp = 0.025, conf = 0.9, 
+                                               minlen = 2))
 
-ruleExplorer(business_rules) # Cool stuff
-inspect(business_rules)
+redundant_rules <- is.redundant(business_cat_rules)
+business_cat_rules <- business_cat_rules[!redundant_rules] # remove redundant rules.
 
-business_top_confidence <- sort(business_rules, decreasing = TRUE, 
+business_top_confidence <- sort(business_cat_rules, decreasing = TRUE, 
                                 na.last = NA, by = "confidence")
 
 inspect(business_top_confidence[1:10])
 
-business_cat_rules <- apriori(business_by_bkw_cat, # All the baskets that are more likely to buy an iMac
-                      parameter = list(supp = 0.005, conf = 0.9, 
-                                       minlen = 2))
+ruleExplorer(business_top_confidence[1:10])
 
-business_top_confidence <- sort(business_cat_rules, decreasing = TRUE, 
-                                na.last = NA, by = "lift")
+ # Retail
+plot_supp_conf(retail_by_bkw_cat, 0.01, 0.007, 0.005, 0.003)
 
-inspect(business_cat_rules)
+retails_cat_rules <- apriori(retail_by_bkw_cat, # All the baskets that are more likely to buy an iMac
+                              parameter = list(supp = 0.003, conf = 0.65, 
+                                               minlen = 2))
 
-ruleExplorer(business_cat_rules)
+redundant_rules <- is.redundant(retail_cat_rules)
+retail_cat_rules <- retail_cat_rules[!redundant_rules] # remove redundant rules.
 
+retail_top_confidence <- sort(retail_cat_rules, decreasing = TRUE, 
+                                na.last = NA, by = "confidence")
+
+inspect(retail_top_confidence)
+
+ruleExplorer(retail_top_confidence)
 # plot(subset(association_rules, items %in% "Acer Desktop"), method = "graph", control = list(type = "items"))
 
+plot(retail_top_confidence, method = "graph",  engine = "htmlwidget")
