@@ -131,7 +131,7 @@ itemFrequencyPlot(subset(by_category = "Laptops"), topN = 20, type = "absolute",
 
  # Rules -----------------------------------------------------------------
 
-plot_supp_conf <- function(trans,s1,s2,s3,s4) {
+plot_supp_conf <- function(trans_obj,s1,s2,s3,s4) {
   
   supportLevels <- c(s1,s2,s3,s4)
   confidenceLevels <- c(0.9,0.8,0.7,0.6)
@@ -143,7 +143,7 @@ plot_supp_conf <- function(trans,s1,s2,s3,s4) {
   
   #Apriori algorithm with support of 5%####
   for (i in 1:length(confidenceLevels)) {
-    rules_sup2[i] <- length(apriori(trans, parameter = list(sup = supportLevels[1],
+    rules_sup2[i] <- length(apriori(trans_obj, parameter = list(sup = supportLevels[1],
                                                                    conf=confidenceLevels[i],
                                                                    target = "rules",
                                                                    minlen = 2)))
@@ -151,7 +151,7 @@ plot_supp_conf <- function(trans,s1,s2,s3,s4) {
   
   #Apriori algorithm with support of 1%####
   for (i in 1:length(confidenceLevels)) {
-    rules_sup3[i] <- length(apriori(trans, parameter = list(sup = supportLevels[2],
+    rules_sup3[i] <- length(apriori(trans_obj, parameter = list(sup = supportLevels[2],
                                                                    conf=confidenceLevels[i],
                                                                    target = "rules",
                                                                    minlen = 2)))
@@ -159,7 +159,7 @@ plot_supp_conf <- function(trans,s1,s2,s3,s4) {
   
   #Apriori algorithm with support of 0.5%####
   for (i in 1:length(confidenceLevels)) {
-    rules_sup4[i] <- length(apriori(trans, parameter = list(sup = supportLevels[3],
+    rules_sup4[i] <- length(apriori(trans_obj, parameter = list(sup = supportLevels[3],
                                                                    conf=confidenceLevels[i],
                                                                    target = "rules",
                                                                    minlen = 2)))
@@ -167,7 +167,7 @@ plot_supp_conf <- function(trans,s1,s2,s3,s4) {
   
   #Apriori algorithm with support of 0.1%####
   for (i in 1:length(confidenceLevels)) {
-    rules_sup5[i] <- length(apriori(trans, parameter = list(sup = supportLevels[4],
+    rules_sup5[i] <- length(apriori(trans_obj, parameter = list(sup = supportLevels[4],
                                                                    conf=confidenceLevels[i],
                                                                    target = "rules",
                                                                    minlen = 2)))
