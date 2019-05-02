@@ -1,0 +1,27 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1556194465365.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "0|10|4|0|\n5|12|28|0|\n29|49|49|0|\n50|55|75|0|\n76|62|96|0|\n97|11|139|0|\n142|51|202|16|\n",
+    "hash" : "0",
+    "id" : "D70278DD",
+    "lastKnownWriteTime" : 1556628144,
+    "last_content_update" : 1556634220910,
+    "path" : "~/Desktop/M2T4/Discover-Associations/Script/Associatons.R",
+    "project_path" : "Script/Associatons.R",
+    "properties" : {
+        "cursorPosition" : "226,0",
+        "docOutlineSize" : "65.99565743120989",
+        "docOutlineVisible" : "0",
+        "scrollLine" : "210"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

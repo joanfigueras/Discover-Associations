@@ -1,0 +1,78 @@
+pacman:: p_load(caret, reshape, ggplot2, dplyr)
+
+x <- runif(50, min = 0, max = 100) # generate 50 random number from 0 to 100
+z <- runif(50, min = 0, max = 100)
+a <- runif(50, min = 0, max = 100)
+b <- runif(50, min = 0, max = 100)
+y <- runif(50, min = 0, max = 100)
+
+df <- as.data.frame(cbind(x,z,a,b,y))
+
+set.seed(100)
+in_training <- createDataPartition(df$y,p=0.7,list = F)
+train <- df[in_training,]
+test <- df[-in_training,]
+
+#-----------------------------------------------------------------------------------------------------------------------------
+
+
+models <- c("rf","lm","knn")
+variables <- c("y ~ x + a", "y ~ z + a", "y ~ a")
+compare_all <- c()
+column_name <- c()
+
+for (i in models){
+  for (j in variables){
+    fit <- train(formula(j), data = df, method = i)
+    pred <- predict(fit,test)
+    metrics <- postResample(pred,test$y)
+    compare_all <- cbind(compare_all,metrics)
+    column_name <- append(column_name,paste(j,i,sep = " / "))
+  }
+}
+colnames(compare_all) <- column_name
+compare_all_melt <- melt(compare_all, varnames = c("metrics","model"))
+compare_all_melt <- as.data.frame(compare_all_melt)
+compare_all_melt
+
+ggplot(compare_all_melt, aes(x=model,y=value)) + geom_col() + facet_grid(metrics~., scales = "free")
+
+#-----------------------------------------------------------------------------------------------------------------------------
+
+
+models <- c("rf","lm","knn")
+compare_metrics <- c()
+
+for (i in models){
+  fit <- train(y~.,data = df,method = i)
+  pred <- predict(fit, test)
+  metrics <- postResample(pred,test$y)
+  compare_metrics <- cbind(compare_metrics,metrics)
+}
+colnames(compare_metrics) <- models
+
+compare_metrics_melt <- melt(compare_metrics,varnames = c("metric","model"))
+compare_metrics_melt <- as.data.frame(compare_metrics_melt)
+
+ggplot(compare_metrics_melt,aes(x=model,y=value)) + geom_col() + facet_grid(metric~.,scales = "free")
+
+#-----------------------------------------------------------------------------------------------------------------------------
+
+variables <- c("y ~ x + a", "y ~ z + a", "y ~ a")
+compare_var <- c()
+
+for (i in variables){
+  fit <- train(formula(i),df,method = "lm")
+  pred <- predict(fit, test)
+  metrics <-  postResample(pred,test$y)
+  compare_var <- cbind(compare_var,metrics)
+}
+
+colnames(compare_var) <- variables
+
+compare_variables_melt <- melt(compare_var,varnames = c("metric","variables"))
+compare_variables_melt <- as.data.frame(compare_variables_melt)
+
+ggplot(compare_variables_melt,aes(x=variables,y=value)) + geom_col() + facet_grid(metric~.,scales = "free")
+
+

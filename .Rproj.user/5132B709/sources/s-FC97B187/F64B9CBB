@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1556194671012.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1639355315",
+    "id" : "F64B9CBB",
+    "lastKnownWriteTime" : 1556490162,
+    "last_content_update" : 1556490162104,
+    "path" : "~/Desktop/M2T4/M2T4 v1/M2T4 v1.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "36,0",
+        "scrollLine" : "26"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

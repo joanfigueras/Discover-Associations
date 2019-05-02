@@ -1,0 +1,60 @@
+
+
+
+pacman::p_load(Matrix,DEoptimR,caTools,arules,arulesViz,tidyverse,ggplot2,dplyr,readr,randomForest,corrplot,caret,party,rstudioapi,dplyr,rio,cellranger,backports,e1071)
+
+
+transactions <- read.transactions(file = "Datasets/ElectronidexTransactions2017.csv",
+                                  format = "basket",
+                                  sep = ",",
+                                  header = FALSE)
+
+
+
+transactions_mat <- as(transactions,"matrix")
+transactions_df <- as.data.frame(transactions_mat)
+
+
+
+#Get to know dataset
+inspect(transactions[1:1000])
+length(transactions)
+mean(size(transactions))
+LIST(transactions)
+itemLabels(transactions)
+
+#Top 10 items by relative frequency
+itemFrequencyPlot(transactions, 
+                  topN = 10,
+                  support = 0.05,
+                  col = "red",
+                  main = "Relative Item Frequency Plot",
+                  type = "relative")
+
+
+image(sample(transactions,400))
+
+firstrules <- apriori(transactions,parameter = list(supp = 0.01, conf = 0.6, minlen = 1))
+
+inspect(firstrules[1:10])
+summary(firstrules)
+
+firstrules <- apriori(transactions, 
+                parameter = list(supp = 0.002, 
+                                 conf = 0.8, 
+                                 minlen = 2, 
+                                 target = "rules"))
+plot(firstrules,
+     method = "graph")
+
+#Sort rules by 
+inspect(sort(firstrules, by = "lift"))
+
+itemRules <- subset(firstrules, items %in% "iMac")
+inspect(itemRules)
+is.redundant(firstrules)
+rules.without.redundancy <- firstrules[!is.redundant(firstrules)]
+
+plot(rules.without.redundancy, jitter = 50, method = "graph", control = list(type="items"))
+
+

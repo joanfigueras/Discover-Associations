@@ -1,0 +1,256 @@
+#Packages and libraries####
+install.packages("caret",dependencies = c("Depends","Suggests"))
+install.packages("ggplot2")
+install.packages("inum")
+install.packages("C50", dependencies = TRUE)
+install.packages("rmdformats")
+library(caret)
+library(readr)
+library(ggplot2)
+library(lattice)
+library(dplyr)
+library(C50)
+library(randomForest)
+library(mlbench)
+library(party)
+library(randomForest)
+#Defining variables
+seed <- 123
+#metric <- "Accuracy"
+
+
+
+#Import Data####
+dscomplete <- read.csv("Data sets/CompleteResponses.csv")
+dsincomplete <- read.csv("Data sets/SurveyIncomplete.csv")
+
+
+#Setting categorical variables####
+dscomplete$brand <- as.factor(dscomplete$brand)
+dsincomplete$brand <- as.factor(dsincomplete$brand)
+
+dscomplete$elevel <- as.factor(dscomplete$elevel)
+dsincomplete$elevel <- as.factor(dsincomplete$elevel)
+
+dscomplete$car <- as.factor(dscomplete$car)
+dsincomplete$car <- as.factor(dsincomplete$car)
+
+dscomplete$zipcode <- as.factor(dscomplete$zipcode)
+dsincomplete$zipcode <- as.factor(dsincomplete$zipcode)
+
+
+
+
+#Feature selection####
+#Chisquared test to see relation between categorical variables
+chisq.test(dscomplete$brand,y = dscomplete$elevel)
+chisq.test(dscomplete$brand,y = dscomplete$car)
+chisq.test(dscomplete$brand,y = dscomplete$zipcode)
+
+#Decision tree to examine which variables have strongest relation to brand
+
+dscomplete$brand <- as.factor(dscomplete$brand)
+decision_tree <- ctree(formula = brand~.,data=training,controls = ctree_control(maxdepth = 3))
+plot(decision_tree)
+
+
+#Setting training/testing sets and Seed####
+set.seed(123)
+in_train <- createDataPartition(y = dscomplete$brand,p=0.75,list=FALSE)
+training <- dscomplete[in_train,]
+testing <- dscomplete[-in_train,]
+
+tr_ctrl <- trainControl(method = "repeatedcv",
+                        number = 10, 
+                        repeats = 3)
+
+
+#k-NN####
+knn_fit <- train(brand~ salary+age, 
+                 data = training, 
+                 method="knn", 
+                 trControl=tr_ctrl, 
+                 preProcess=c("center","scale"),
+                 tuneLength=15)
+knn_fit
+plot(knn_fit)
+
+#Predicting with k-NN
+knn_predictions <- predict(knn_fit,newdata = testing)
+summary(knn_predictions)
+confusionMatrix(knn_predictions,testing$brand)
+head(knn_predictions)
+
+
+
+#Random Forest####
+tr_ctrl <- trainControl(method = "repeatedcv",number = 10, repeats = 3,search ="random")
+set.seed(seed)
+mtry <- 10
+rf_fit <- train(brand~salary+age, 
+                data = training, 
+                method="rf", 
+                trControl=tr_ctrl, 
+                preProcess=c("center","scale"),
+                tuneLength=15,
+                metric="Accuracy")
+rf_fit
+
+
+#Predicting
+rf_predictions <- predict(rf_fit,newdata = testing)
+summary(rf_predictions)
+confusionMatrix(rf_predictions,testing$brand)
+
+
+#C50####
+tr_ctrl <- trainControl(method = "repeatedcv",
+                        number = 10, 
+                        repeats = 3)
+cfive_fit <- train(brand~salary+age, 
+                data = training, 
+                method="C5.0", 
+                trControl=tr_ctrl, 
+                preProcess=c("center","scale"),
+                tuneLength=15,
+                metric="Accuracy")
+cfive_fit
+plot(cfive_fit)
+
+
+
+#Predictions####
+#C5.0
+cfive_predictions <- predict(cfive_fit,testing)
+cfive_metrics <- postResample(pred = cfive_predictions,obs = testing$brand)
+cfive_metrics
+
+#Random forest
+rf_predictions <- predict(rf_fit,testing)
+rf_metrics <- postResample(pred = rf_predictions,obs=testing$brand)
+rf_metrics
+
+#k-NN
+knn_predictions <- predict(knn_fit,testing)
+knn_metrics <- postResample(pred = knn_predictions,obs=testing$brand)
+knn_metrics
+
+
+#Predictions for the incomplete survey using C5.0####
+tr_ctrl <- trainControl(method = "repeatedcv",
+                        number = 10, 
+                        repeats = 3)
+cfive_fit_whole <- train(brand~salary+age, 
+                   data = dscomplete, 
+                   method="C5.0", 
+                   trControl=tr_ctrl, 
+                   preProcess=c("center","scale"),
+                   tuneLength=15,
+                   metric="Accuracy")
+cfive_fit_whole
+cfive_fit_whole_predictions <- predict(cfive_fit_whole,dsincomplete)
+
+dsincomplete$brand_predictions <- cfive_fit_whole_predictions
+
+
+
+
+
+#Surveys comparison####
+
+#Creating merged dataframe
+dscomplete$survey <- "Complete"
+dsincomplete$survey <- "Incomplete"
+merged_data <- data.frame(rbind(dscomplete,dsincomplete))
+
+#Education level
+ggplot(merged_data,aes(x=elevel,fill=survey))+
+  geom_bar(color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Bar Graph of Education Level",fill="Survey")+
+  xlab("Education Level")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"),
+        axis.text.x = element_text(angle=90))+
+  scale_x_discrete(labels=c("Less than High \n School Degree","High School\nDegree","Some\nCollege","4-Year\nCollege Degree","Master's,Doctoral or\nProfessional Degree"))
+
+#Zipcode
+ggplot(merged_data,aes(x=zipcode,fill=survey))+
+  geom_bar(color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Bar Graph of Zipcode",fill="Survey")+
+  xlab("Zipcode")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"),
+        axis.text.x = element_text(angle=90))+
+  scale_x_discrete(labels=c("New\nEngland","Mid-Atlantic","East North\nCentral","West North\nCentral","South\nAtlantic","East South\nCentral","West South\nCentral","Mountain","Pacific"))
+
+#Car
+ggplot(merged_data,aes(x=car,fill=survey))+
+  geom_bar(color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Bar Graph of Car Brands",fill="Survey")+
+  xlab("Car brands")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"),
+        axis.text.x=element_text(angle=90))+
+  scale_x_discrete(labels=c("BMW","Buick","Cadillac","Chevrolet","Chrysler","Dodge","Ford","Honda","Hyundai","Jeep","Kia","Lincoln","Mazda","Mercedes\nBenz","Mitsubishi","Nissan","Ram","Subaru","Toyota","None of\nthe above"))
+
+#Credit
+ggplot(merged_data,aes(x=credit,fill=survey))+
+  geom_histogram(bins=30,color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Histogram of Credit",fill="Survey")+
+  xlab("Credit")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"))
+
+#Salary
+ggplot(merged_data,aes(x=salary,fill=survey))+
+  geom_histogram(bins=30,color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Histogram of Salary",fill="Survey")+
+  xlab("Salary")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"))
+
+#Age
+ggplot(merged_data,aes(x=age,fill=survey))+
+  geom_histogram(bins=30,color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Histogram of Age",fill="Survey")+
+  xlab("Age")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"))
+
+
+
+
+
+
+#######################################################################################################################
+#Plotting predictions between surveys####
+
+'Taking out empty Brand colum'
+dsincomplete2 <- subset(dsincomplete,select=-c(7,8))
+
+'Adding brand predictions column to Incomplete Survey'
+dsincomplete2$brand <- cfive_fit_whole_predictions
+
+'Merging both surveys to compare them'
+dsincomplete2$survey <- "Incomplete"
+merged_data2 <- data.frame(rbind(dsincomplete2,dscomplete))
+
+'Plotting predictions'
+ggplot(merged_data2,aes(x=age,y=salary,col=brand))+geom_point()+
+  facet_grid(~survey)+
+  scale_color_manual(labels=c("Acer","Sony"),values = c("orange1","yellowgreen"))+
+  geom_smooth()+
+  labs(title = "Brand Preferences related to Salary & Age")+
+  xlab("Age")+
+  ylab("Salary")+
+  theme(panel.background = element_rect(fill="white",colour = "azure3",size = 0.5,linetype = "solid"))
+
+
+
+

@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1556271673484.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "27|30|42|0|\n43|18|55|0|\n56|39|66|0|\n67|5|84|0|\n85|14|104|0|\n105|4|120|0|\n121|12|137|0|\n138|49|157|0|\n",
+    "hash" : "4214569825",
+    "id" : "A748AF34",
+    "lastKnownWriteTime" : 1556096473,
+    "last_content_update" : 1556271720074,
+    "path" : "~/Desktop/M2T2/M2T2 v2/caret v1.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "175,0",
+        "scrollLine" : "122"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

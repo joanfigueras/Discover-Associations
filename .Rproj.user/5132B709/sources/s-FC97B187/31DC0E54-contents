@@ -1,0 +1,50 @@
+---
+title: "Consumer Brand Preferences"
+Author: "Yago Cordón Guerrero"
+date: "12/04/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+REPORT BACKGROUND
+
+## Executive Summary
+
+BRIEF ANALAYSIS OF THE MAIN FINDINGS REGARDING CUSTOMER PREFERENCES
+
+```{r cars}
+
+```
+
+## Models Comparison
+
+Here we'll compare the different models performance, in order to choose the one with best performance metrics.
+
+```{r model plots comparison, echo=FALSE}
+#Creation of training and test sets from COMPLETE_RESPONSES####
+set.seed(123)
+
+in_train <- createDataPartition(y = complete_responses$brand,
+                                p=0.75,
+                                list=FALSE)
+training <- complete_responses[in_train,]
+testing <- complete_responses[-in_train,]
+
+knn_fit <- train(brand~ salary+age, 
+                 data = training, 
+                 method="knn", 
+                 trControl=tr_ctrl, 
+                 preProcess=c("center","scale"),
+                 tuneLength=15)
+
+plot(knn_fit)
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

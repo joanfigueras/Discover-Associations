@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1556610243857.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "7D10D436",
+    "lastKnownWriteTime" : 7377518737310704177,
+    "last_content_update" : 1556610243857,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "1AA77DFA",
+        "caption" : "transactions_df2",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=transactions_df2&cache_key=1AA77DFA",
+        "displayedObservations" : "9835",
+        "environment" : "",
+        "expression" : "transactions_df2",
+        "object" : "transactions_df2",
+        "preview" : "0",
+        "totalObservations" : "9835",
+        "variables" : "126"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

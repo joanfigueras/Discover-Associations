@@ -1,0 +1,268 @@
+---
+title: "Customer Brand preferences Report"
+subtitle: "Blackwell Electronics"
+author: "Yago Cordón Guerrero"
+date: "12/04/2019"
+output: 
+  html_document:
+    theme: united
+    highlight: tango
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    collapsed: false
+    smooth_scroll: false
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(readr)
+library(ggplot2)
+library(lattice)
+library(dplyr)
+library(C50)
+library(randomForest)
+library(mlbench)
+library(party)
+library(randomForest)
+library(knitr)
+library(rmdformats)
+#Import Data####
+dscomplete <- read.csv("Data sets/CompleteResponses.csv")
+dsincomplete <- read.csv("Data sets/SurveyIncomplete.csv")
+#Setting categorical variables####
+dscomplete$brand <- as.factor(dscomplete$brand)
+dsincomplete$brand <- as.factor(dsincomplete$brand)
+
+dscomplete$elevel <- as.factor(dscomplete$elevel)
+dsincomplete$elevel <- as.factor(dsincomplete$elevel)
+
+dscomplete$car <- as.factor(dscomplete$car)
+dsincomplete$car <- as.factor(dsincomplete$car)
+
+dscomplete$zipcode <- as.factor(dscomplete$zipcode)
+dsincomplete$zipcode <- as.factor(dsincomplete$zipcode)
+#Creating merged dataframe####
+dscomplete$survey <- "Complete"
+dsincomplete$survey <- "Incomplete"
+merged_data <- data.frame(rbind(dscomplete,dsincomplete))
+```
+
+
+#  Background
+
+
+We have been asked by Danielle Sherman, CTO of Blackwell Electronics, to predict the customers' brand preferences that are missing from the incomplete surveys. In the following report, you will find a long analysis of both samples to see if they are useful for our purpose of predicting the customer brands' preferences and find the differences between both of them, as well as a prediction for brand preferences in the incomplete survey.
+
+
+# Executive Summary
+
+After analyzing the data and making the predictions for the customers' brand preferences, we can wrap our main findings in four points:
+
+* The most important finding is that, after analysing the distribution of each feature, we can see that they are equally distributed, __which means that every value for each attribute is almost equally represented__. This means that our samples might not be realistic when using them to study our target population, since it is not representative that, for instance, our customers are equally divided by their level of education, salaries, region of purchase (zipcode) or their age (this is how they are represented in our samples). It is easy to understand that our number of customers won't be equally divided by age, salary or education level, for example.
+
+* So, we can assume that both datasets were sampled by stratification of each variable in order to avoid any bias. However, as it is stratified in all the attributes, we can say it is over stratified so, __we can conclude that these samples are not representative of the population that we want to analyze__. __See Data Samples Comparison section__. 
+
+* After analysing the differences in the distribution of the attributes between the Complete and Incomplete surveys, we realised that both samples are identical in terms of statistics and distribution of the variables; the only difference being that in the Incomplete survey we have 5,000 observations (vs. 10,000 observations in the Complete survey). Taking this into account, we know that the customers' brand preferences for customers in the Incomplete survey sample will be almost identical to the customers' brand preferences from the Complete survey sample, with no need of classification models to predict. 
+
+* Despite the similarity between samples and their low representation of reality, we conducted a C5.0 classification model to predict the Incomplete survey's costumers brand preferences, with a 92% of accuracy, using the Salary and Age of the customers as they were the variables with the strongest relation with the Brand Preference. __See Predicting Consumers' Brand Preferences section__.
+
+
+# Data Samples Comparison & Features distribution
+
+
+In the following graphs, we can see both the similarity between the two samples that we have (Complete and Incomplete survey), and the distribution of each feature of our samples.  
+
+As we have stated, the distribution of each feature is usually layout almost equally for each value of the feature, which justifies the __over stratification__ we mentioned before.
+
+
+
+```{r EL,echo=FALSE, fig.align="center"}
+
+#Education Level
+ggplot(merged_data,aes(x=elevel,fill=survey))+
+  geom_bar(color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Bar Graph of Education Level",fill="Survey")+
+  xlab("Education Level")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"),
+        axis.text.x = element_text(angle=90))+
+  scale_x_discrete(labels=c("Less than High \n School Degree","High School\nDegree","Some\nCollege","4-Year\nCollege Degree","Master's,Doctoral or\nProfessional Degree"))
+```
+
+> Sample almost equally distributed per level of education.
+
+```{r ZC, echo=FALSE, fig.align="center"}
+#Zipcode
+ggplot(merged_data,aes(x=zipcode,fill=survey))+
+  geom_bar(color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Bar Graph of Zipcode",fill="Survey")+
+  xlab("Zipcode")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"),
+        axis.text.x = element_text(angle=90))+
+  scale_x_discrete(labels=c("New\nEngland","Mid-Atlantic","East North\nCentral","West North\nCentral","South\nAtlantic","East South\nCentral","West South\nCentral","Mountain","Pacific"))
+```
+
+> Sample almost equally distributed per Zipcode.
+
+
+```{r C, echo=FALSE, fig.align="center"}
+#Car
+ggplot(merged_data,aes(x=car,fill=survey))+
+  geom_bar(color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Bar Graph of Car Brands",fill="Survey")+
+  xlab("Car brands")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"),
+        axis.text.x=element_text(angle=90))+
+  scale_x_discrete(labels=c("BMW","Buick","Cadillac","Chevrolet","Chrysler","Dodge","Ford","Honda","Hyundai","Jeep","Kia","Lincoln","Mazda","Mercedes","Mitsubishi","Nissan","Ram","Subaru","Toyota","None of\nthe above"))
+```
+
+> Sample almost equally distributed per Car brand.
+
+
+```{r CR, echo=FALSE, fig.align="center"}
+#Credit
+ggplot(merged_data,aes(x=credit,fill=survey))+
+  geom_histogram(bins=30,color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Histogram of Credit Availability",fill="Survey")+
+  xlab("Credit")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"))
+```
+
+> Sample almost equally distributed per Credit Available.
+
+
+```{r SAL, echo=FALSE, fig.align="center"}
+#Salary
+ggplot(merged_data,aes(x=salary,fill=survey))+
+  geom_histogram(bins=30,color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Histogram of Salary",fill="Survey")+
+  xlab("Salary")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"))
+```
+
+> Sample almost equally distributed per Salary.
+
+```{r AGE, echo=FALSE, fig.align="center"}
+#Age
+ggplot(merged_data,aes(x=age,fill=survey))+
+  geom_histogram(bins=30,color="gray33")+
+  facet_grid(~survey)+
+  labs(title = "Histogram of Age",fill="Survey")+
+  xlab("Age")+
+  ylab("Count")+
+  theme(panel.background = element_rect(fill="azure3",colour = "azure3",size = 0.5,linetype = "solid"))
+
+```
+
+> Sample almost equally distributed per Age.
+
+
+# Predicting Customers' Brand Preferences
+
+## Feature Selection
+
+We ran a decision tree to see which features have a stronger relation with the dependent variable Brand. We can clearly see that Salary is the feature with a stronger relation to Brand, followed by the Age.
+
+```{r decisiontree,echo=FALSE}
+dscomplete_dt <- read.csv("Data sets/CompleteResponses.csv")
+decision_tree <- ctree(brand~., data=dscomplete_dt, controls = ctree_control(maxdepth = 3))
+plot(decision_tree)
+```
+
+To verify that the other variables have a weak relation with the dependent variable, as they are all categorical variables (Zipcode, Car and Education Level), we did 3 Chisquare test for each of them. As we see, the P-value in all three cases is greater than 0, so we can say each of them is independent from the Brand preference by accepting  the null hypothesis.
+
+
+```{r chisq, echo=FALSE,fig.align="center",eval=FALSE}
+chisq.test(dscomplete$brand,y = dscomplete$elevel)
+chisq.test(dscomplete$brand,y = dscomplete$car)
+chisq.test(dscomplete$brand,y = dscomplete$zipcode)
+
+```
+Chi- Square Test~Brand | P-value
+-----------------------|--------
+    Education Level    | 0.9527  
+    Car Brand          | 0.8596  
+    Zipcode            | 0.4506  
+
+
+
+## Predictions with C5.0
+
+After conducting the classification models that we can see in the following table, we decided to choose C5.0 as it showed the best perfomance metrics. However, we can see that the difference in accuracy between the models is really low.
+
+Classification Model|Accuracy|Kappa
+--------------------|--------|---------
+        k-NN        | 91.8%  |0.8265
+    Random Forest   | 91.4%  |0.8175
+        C5.0        | 92.1%  |0.8283
+        
+
+
+In the following graph we can see the Brand preferences related to Salary and Age from the Complete survey (the ones we already knew), and the Brand preferences predictions related to Salary and Age as well.
+
+
+```{r PRED, echo=FALSE,warning=FALSE,message=FALSE,fig.align="center"}
+
+#Predictions for the incomplete survey using C5.0
+tr_ctrl <- trainControl(method = "repeatedcv",
+                        number = 10, 
+                        repeats = 3)
+cfive_fit_whole <- train(brand~salary+age, 
+                   data = dscomplete, 
+                   method="C5.0", 
+                   trControl=tr_ctrl, 
+                   preProcess=c("center","scale"),
+                   tuneLength=15,
+                   metric="Accuracy")
+
+
+cfive_fit_whole_predictions <- predict(cfive_fit_whole,dsincomplete)
+
+#Taking out empty Brand colum'
+dsincomplete2 <- subset(dsincomplete,select=-c(7,8))
+
+#Adding brand predictions column to Incomplete Survey'
+dsincomplete2$brand <- cfive_fit_whole_predictions
+#Merging both surveys to compare them'
+dsincomplete2$survey <- "Incomplete"
+merged_data2 <- data.frame(rbind(dsincomplete2,dscomplete))
+
+ggplot(merged_data2,aes(x=age,y=salary,col=brand))+geom_point()+
+  facet_grid(~survey)+
+  scale_color_manual(labels=c("Acer","Sony"),values = c("orange1","yellowgreen"))+
+  geom_smooth()+labs(title = "Brand Preferences related to Salary & Age")+
+  xlab("Age")+
+  ylab("Salary")+
+  theme(panel.background = element_rect(fill="white",colour = "azure3",size = 0.5,linetype = "solid"))
+
+```
+
+> We can clearly see that both datasets (the Incomplete with the predicted Brand preferences) are distributed in the same way.
+
+
+## Insights
+
+Although, as we have already stated, the data samples are neither realistic nor representative, and should not be taken into account when considering to partnership with either Acer or Sony, we could make predictions for the empty column of Brand preferences for the Incomplete survey with a really high accuracy, due to the fact that the Incomplete survey data, as said, is very similar to the Complete survey data. We can reasure this by looking at the previous graph, where the distribution of the Brand preferences in terms of salary and age, is the same for both surveys, so we can interpret the same insights for both:
+
+
+* Customers will prefer Acer if:
+  + Aged between 20 and 40, and their salary is in between 50k and 100k.
+  + Aged between 40 and 60, and their salary is in between 80k and 120k.
+  + Aged between 60 and 80, and their salary is lower than 80k.
+
+* In all other cases, they will prefer Sony, which is the most preferred brand by the biggest part of the sample, as we can clearly see in the graph.
+
+__However, we must underline again that these data samples are not representative, or shouldn't be considered as representative of the population of customers that we want to get to know better.__
+
