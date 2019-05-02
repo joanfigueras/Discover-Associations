@@ -54,22 +54,25 @@ v2 <- c()
 v3 <- c()
 v4 <- c()
 v5 <- c()
+v6 <- c()
 client_type <- c()
 
 for (i in 1:nrow(transactions_df)){
   v1[i] <- sum(grepl("Laptops", transactions_df[i, ]))
   v2[i] <- sum(grepl("Desktop", transactions_df[i, ]))
-  v3[i] <- sum(grepl("Printer", transactions_df[i, ]))
+  v3[i] <- sum(grepl("Printers", transactions_df[i, ]))
   v4[i] <- sum(grepl("Monitor", transactions_df[i, ]))
   v5[i] <- sum(transactions_df2[i,1:125])
-  if (sum(v1[i]+v2[i]) >=2 | sum(v3[i]) >=2 | sum(v4[i] + v1[i]) >=2 |
-      v5[i] >=6) 
+  v6[i] <- sum(grepl("Gam", transactions_df[i, ]))
+  if (v1[i]+v2[i] >=2 | v3[i] >=2 | v4[i] + v1[i] >=2 | v5[i] >=6) 
     {
     client_type[i] <- "Business"
+  } else
+    if (v6[i]>=2) {
+      client_type[i] <- "Gamer" 
   } else {
     client_type[i] <- "Retail"
-  }
-}
+  }}
 
 transactions_df2$client_type <- client_type
 table(transactions_df2$client_type)
@@ -197,6 +200,8 @@ plot_supp_conf <- function(trans_obj,s1,s2,s3,s4) {
     theme(legend.title=element_blank())
 
 return(plot_all)}
+
+plot_supp_conf(transactions,0.001,0.002,0.003,0.004)
 
  # Business
 plot_supp_conf(business_by_bkw_cat, 0.03, 0.027, 0.025, 0.024)
